@@ -96,4 +96,54 @@ class TestSitemapParser < Test::Unit::TestCase
     assert_equal 3, sitemap.to_a.count
     assert_equal 3, sitemap.urls.count
   end
+
+  sub_test_case "gzip" do
+    def test_gzip_sitemap
+      url = 'https://example.com/sitemap.xml.gz'
+      headers = {
+        'Content-Type' => 'application/gzip'
+      }
+
+      file = File.join(File.dirname(__FILE__), 'fixtures', 'sitemap.xml.gz')
+      response = Typhoeus::Response.new(
+        code: 200,
+        headers: headers,
+        body: File.read(file)
+      )
+
+      Typhoeus.stub(url).and_return(response)
+
+      sitemap = SitemapParser.new url
+      expected = [
+        'http://example.com/',
+        'http://example.com/about/',
+        'http://example.com/contact/'
+      ]
+      assert_equal(expected, sitemap.to_a)
+    end
+
+    def test_gzip_sitemap2
+      url = 'https://example.com/sitemap2.xml.gz'
+      headers = {
+        'Content-Type' => 'application/gzip'
+      }
+      file = File.join(File.dirname(__FILE__), 'fixtures', 'sitemap2.xml.gz')
+
+      response = Typhoeus::Response.new(
+        code: 200,
+        headers: headers,
+        body: File.read(file)
+      )
+
+      Typhoeus.stub(url).and_return(response)
+
+      sitemap = SitemapParser.new url
+      expected = [
+        'https://example.com/shop/g/gUC-T29-019-2-03/',
+        'https://example.com/shop/g/gUC-T29-019-2-04/',
+        'https://example.com/shop/g/gUC-T72-019-2-02/'
+      ]
+      assert_equal(expected, sitemap.to_a)
+    end
+  end
 end

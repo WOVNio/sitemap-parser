@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'typhoeus'
+require 'zlib'
 
 class SitemapParser
 
@@ -15,13 +16,13 @@ class SitemapParser
         request = Typhoeus::Request.new(@url, request_options)
         request.on_complete do |response|
           if response.success?
-            return response.body
+            return inflate_body_if_needed(response)
           else
             raise "HTTP request to #{@url} failed"
           end
         end
         request.run
-      elsif File.exist?(@url) && @url =~ /[\\\/]sitemap\.xml\Z/i
+      elsif File.exist?(@url)
         open(@url) { |f| f.read }
       end
     end
@@ -60,5 +61,17 @@ class SitemapParser
   def filter_sitemap_urls(urls)
     return urls if @options[:url_regex].nil?
     urls.select {|url| url.at("loc").content.strip =~ @options[:url_regex] }
+  end
+
+  def inflate_body_if_needed(response)
+    return response.body unless response.headers
+
+    case response.headers["Content-Type"]
+    when /application\/gzip/, /application\/octet-stream/
+      gz = Zlib::GzipReader.new(StringIO.new(response.body))
+      gz.read
+    else
+      response.body
+    end
   end
 end
