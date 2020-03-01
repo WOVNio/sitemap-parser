@@ -67,7 +67,7 @@ class SitemapParser
     return response.body unless response.headers
 
     case response.headers["Content-Type"]
-    when /application\/gzip/, /application\/octet-stream/
+    when /application\/(x-)?gzip/, /application\/octet-stream/
       gz = Zlib::GzipReader.new(StringIO.new(response.body))
       gz.read
     else
